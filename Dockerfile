@@ -6,6 +6,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o /app/fsb -ldflags="-w -s" ./cmd/fsb
 
 FROM scratch
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /app/fsb /app/fsb
-EXPOSE ${PORT}
+EXPOSE 8080
 ENTRYPOINT ["/app/fsb", "run"]

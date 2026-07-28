@@ -14,6 +14,18 @@ A high-speed, lightweight Telegram bot and web server written in Go that generat
 
 ---
 
+## Tech Stack
+
+This project is built using the following modern Go libraries and technologies:
+
+- **Language:** [Go](https://go.dev/) (1.25+) for native performance and concurrency.
+- **Telegram Client (MTProto):** [gotd/td](https://github.com/gotd/td) and [gotgproto](https://github.com/celestix/gotgproto) for secure, high-performance interactions with the Telegram API.
+- **Web Server:** [Gin Web Framework](https://github.com/gin-gonic/gin) for robust routing and streaming endpoints.
+- **CLI Framework:** [Cobra](https://github.com/spf13/cobra) for structured, easy-to-use command-line interface commands.
+- **Database:** SQLite (via [glebarez/sqlite](https://github.com/glebarez/sqlite)) to handle session storage locally.
+
+---
+
 ## Local Setup & Installation
 
 ### Prerequisites
@@ -54,6 +66,6 @@ A high-speed, lightweight Telegram bot and web server written in Go that generat
 
 ## Copyright
 
-Copyright (C) 2026 under [GNU Affero General Public License](https://www.gnu.org/licenses/agpl-3.0.en.html).
+Copyright (C) 2026 XeonModz under [GNU Affero General Public License](https://www.gnu.org/licenses/agpl-3.0.en.html).
 
 TG-FileStreamBot is Free Software: You can use, study, share, and improve it at your will. Specifically, you can redistribute and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. All forks of this repository must remain open-source under the same license.
