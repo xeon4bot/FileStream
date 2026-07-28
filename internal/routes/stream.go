@@ -5,6 +5,7 @@ import (
 	"EverythingSuckz/fsb/internal/stream"
 	"EverythingSuckz/fsb/internal/types"
 	"EverythingSuckz/fsb/internal/utils"
+	_ "embed"
 	"fmt"
 	"io"
 	"net/http"
@@ -20,6 +21,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+//go:embed watch.html
+var watchHTML string
+
+//go:embed favicon.png
+var faviconBytes []byte
+
 var log *zap.Logger
 
 func (e *allRoutes) LoadHome(r *Route) {
@@ -27,8 +34,12 @@ func (e *allRoutes) LoadHome(r *Route) {
 	defer log.Info("Loaded stream route")
 	r.Engine.GET("/stream/:messageID", getStreamRoute)
 	r.Engine.GET("/watch/:messageID", getWatchRoute)
-	r.Engine.StaticFile("/favicon.ico", "./favicon.png")
-	r.Engine.StaticFile("/favicon.png", "./favicon.png")
+	r.Engine.GET("/favicon.ico", func(ctx *gin.Context) {
+		ctx.Data(http.StatusOK, "image/png", faviconBytes)
+	})
+	r.Engine.GET("/favicon.png", func(ctx *gin.Context) {
+		ctx.Data(http.StatusOK, "image/png", faviconBytes)
+	})
 }
 
 func getStreamRoute(ctx *gin.Context) {
@@ -221,10 +232,10 @@ func getWatchRoute(ctx *gin.Context) {
 		DownloadURL:   downloadURL,
 	}
 
-	tmpl, err := template.ParseFiles("watch.html")
+	tmpl, err := template.New("watch").Parse(watchHTML)
 	if err != nil {
-		log.Error("Failed to parse watch.html template", zap.Error(err))
-		http.Error(w, "internal server error: watch.html missing", http.StatusInternalServerError)
+		log.Error("Failed to parse watch template", zap.Error(err))
+		http.Error(w, "internal server error: failed to parse template", http.StatusInternalServerError)
 		return
 	}
 
