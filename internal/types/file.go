@@ -15,6 +15,9 @@ type File struct {
 	FileName string
 	MimeType string
 	ID       int64
+	Duration int
+	Width    int
+	Height   int
 }
 
 type HashableFileStruct struct {

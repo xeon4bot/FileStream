@@ -71,10 +71,19 @@ func FileFromMedia(media tg.MessageMediaClass) (*types.File, error) {
 			return nil, fmt.Errorf("unexpected type %T", media)
 		}
 		var fileName string
+		var duration int
+		var width, height int
 		for _, attribute := range document.Attributes {
-			if name, ok := attribute.(*tg.DocumentAttributeFilename); ok {
-				fileName = name.FileName
-				break
+			Logger.Sugar().Infof("Telegram Attribute: %T %+v", attribute, attribute)
+			switch attr := attribute.(type) {
+			case *tg.DocumentAttributeFilename:
+				fileName = attr.FileName
+			case *tg.DocumentAttributeVideo:
+				duration = int(attr.Duration)
+				width = attr.W
+				height = attr.H
+			case *tg.DocumentAttributeAudio:
+				duration = int(attr.Duration)
 			}
 		}
 		return &types.File{
@@ -83,6 +92,9 @@ func FileFromMedia(media tg.MessageMediaClass) (*types.File, error) {
 			FileName: fileName,
 			MimeType: document.MimeType,
 			ID:       document.ID,
+			Duration: duration,
+			Width:    width,
+			Height:   height,
 		}, nil
 	case *tg.MessageMediaPhoto:
 		photo, ok := media.Photo.AsNotEmpty()

@@ -98,6 +98,7 @@ func sendLink(ctx *ext.Context, u *ext.Update) error {
 	)
 	hash := utils.GetShortHash(fullHash)
 	link := fmt.Sprintf("%s/stream/%d?hash=%s", config.ValueOf.Host, messageID, hash)
+	watchLink := fmt.Sprintf("%s/watch/%d?hash=%s", config.ValueOf.Host, messageID, hash)
 	text := styling.Code(link)
 	row := tg.KeyboardButtonRow{
 		Buttons: []tg.KeyboardButtonClass{
@@ -107,9 +108,19 @@ func sendLink(ctx *ext.Context, u *ext.Update) error {
 			},
 		},
 	}
-	if strings.Contains(file.MimeType, "video") || strings.Contains(file.MimeType, "audio") || strings.Contains(file.MimeType, "pdf") {
+	if strings.Contains(file.MimeType, "video") {
 		row.Buttons = append(row.Buttons, &tg.KeyboardButtonURL{
-			Text: "Stream",
+			Text: "Watch Online",
+			URL:  watchLink,
+		})
+	} else if strings.Contains(file.MimeType, "audio") {
+		row.Buttons = append(row.Buttons, &tg.KeyboardButtonURL{
+			Text: "Listen Online",
+			URL:  watchLink,
+		})
+	} else if strings.Contains(file.MimeType, "pdf") {
+		row.Buttons = append(row.Buttons, &tg.KeyboardButtonURL{
+			Text: "View PDF",
 			URL:  link,
 		})
 	}

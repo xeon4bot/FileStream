@@ -10,6 +10,9 @@ import (
 	"net/http"
 	"strconv"
 
+	"html/template"
+	"strings"
+
 	"github.com/gotd/td/tg"
 	range_parser "github.com/quantumsheep/range-parser"
 	"go.uber.org/zap"
@@ -23,6 +26,9 @@ func (e *allRoutes) LoadHome(r *Route) {
 	log = e.log.Named("Stream")
 	defer log.Info("Loaded stream route")
 	r.Engine.GET("/stream/:messageID", getStreamRoute)
+	r.Engine.GET("/watch/:messageID", getWatchRoute)
+	r.Engine.StaticFile("/favicon.ico", "./favicon.png")
+	r.Engine.StaticFile("/favicon.png", "./favicon.png")
 }
 
 func getStreamRoute(ctx *gin.Context) {
@@ -60,6 +66,13 @@ func getStreamRoute(ctx *gin.Context) {
 	)
 	if !utils.CheckHash(authHash, expectedHash) {
 		http.Error(w, "invalid hash", http.StatusBadRequest)
+		return
+	}
+
+	// Intercept browser page views and redirect to watch page
+	if ctx.Query("d") != "true" && strings.Contains(r.Header.Get("Accept"), "text/html") &&
+		(strings.Contains(file.MimeType, "video") || strings.Contains(file.MimeType, "audio")) {
+		ctx.Redirect(http.StatusFound, fmt.Sprintf("/watch/%d?hash=%s", messageID, authHash))
 		return
 	}
 
@@ -138,5 +151,86 @@ func getStreamRoute(ctx *gin.Context) {
 				log.Error("Error while copying stream", zap.Error(err))
 			}
 		}
+	}
+}
+
+type WatchPageData struct {
+	FileName      string
+	FileSizeStr   string
+	DurationStr   string
+	ResolutionStr string
+	MimeType      string
+	Status        string
+	StreamURL     string
+	DownloadURL   string
+}
+
+func getWatchRoute(ctx *gin.Context) {
+	w := ctx.Writer
+
+	messageIDParm := ctx.Param("messageID")
+	messageID, err := strconv.Atoi(messageIDParm)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	authHash := ctx.Query("hash")
+	if authHash == "" {
+		http.Error(w, "missing hash param", http.StatusBadRequest)
+		return
+	}
+
+	worker := bot.GetNextWorker()
+
+	file, err := utils.TimeFuncWithResult(log, "FileFromMessage", func() (*types.File, error) {
+		return utils.FileFromMessage(ctx, worker.Client, messageID)
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	expectedHash := utils.PackFile(
+		file.FileName,
+		file.FileSize,
+		file.MimeType,
+		file.ID,
+	)
+	if !utils.CheckHash(authHash, expectedHash) {
+		http.Error(w, "invalid hash", http.StatusBadRequest)
+		return
+	}
+
+	resolutionStr := "N/A"
+	if file.Width > 0 && file.Height > 0 {
+		resolutionStr = fmt.Sprintf("%dx%d", file.Width, file.Height)
+	}
+
+	streamURL := fmt.Sprintf("/stream/%d?hash=%s", messageID, authHash)
+	downloadURL := fmt.Sprintf("/stream/%d?hash=%s&d=true", messageID, authHash)
+
+	data := WatchPageData{
+		FileName:      file.FileName,
+		FileSizeStr:   utils.FormatBytes(file.FileSize),
+		DurationStr:   utils.FormatDuration(file.Duration),
+		ResolutionStr: resolutionStr,
+		MimeType:      file.MimeType,
+		Status:        "Ready",
+		StreamURL:     streamURL,
+		DownloadURL:   downloadURL,
+	}
+
+	tmpl, err := template.ParseFiles("watch.html")
+	if err != nil {
+		log.Error("Failed to parse watch.html template", zap.Error(err))
+		http.Error(w, "internal server error: watch.html missing", http.StatusInternalServerError)
+		return
+	}
+
+	ctx.Header("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	if err := tmpl.Execute(w, data); err != nil {
+		log.Error("Failed to render watch template", zap.Error(err))
 	}
 }
