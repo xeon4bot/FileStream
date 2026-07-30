@@ -801,6 +801,41 @@
             color: var(--text-secondary);
         }
 
+        /* Fix Audio Button */
+        .fix-audio-btn {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: #000;
+            font-weight: 700;
+            font-size: 13px;
+            padding: 9px 16px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+            transition: all 0.2s ease;
+            margin-top: 10px;
+        }
+
+        .fix-audio-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(245, 158, 11, 0.45);
+        }
+
+        .audio-track-select {
+            background: #191830;
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            outline: none;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+
         /* Our Bots Card */
         .bots-card {
             background: var(--card-bg);
@@ -1332,7 +1367,18 @@
                 </button>
                 <div class="audio-notice-collapse" id="audio-notice-body">
                     <div class="audio-notice-inner">
-                        The browser web player automatically plays the <strong>Primary / Default Audio Track</strong>. However, web browsers (Chrome, Safari, Firefox) cannot switch between <strong>Multi-Language / Dual Audio tracks</strong> or decode formats like <strong>EAC3 / AC3 / DTS</strong>. To select or change audio languages (English, Dual Audio, etc.), please stream using an external player app (<strong>VLC</strong>, <strong>MX Player</strong>, <strong>PLAYit</strong>, etc.) below! Click any player button for step-by-step connection guides.
+                        <div>
+                            Web browsers (Chrome, Safari, Firefox) cannot decode surround sound codecs like <strong>Dolby Digital AC3 5.1 / EAC3 / DTS</strong> or switch <strong>Multi-Language / Dual Audio</strong> tracks inside MKV files. Click the button below to fix browser sound or stream in <strong>VLC / MX Player</strong> for full audio controls!
+                        </div>
+                        <div style="margin-top: 12px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                            <button type="button" onclick="enableBrowserAudioFix(0)" class="fix-audio-btn">
+                                <svg viewBox="0 0 24 24" style="width: 18px; height: 18px; fill: currentColor;"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                                <span>Fix Audio Sound in Browser (Transcode to AAC)</span>
+                            </button>
+                            <select id="audio-track-selector" class="audio-track-select" style="display: none;" onchange="enableBrowserAudioFix(this.value)">
+                                <option value="0">Default Audio Track</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1843,6 +1889,44 @@
             a.click();
             document.body.removeChild(a);
         }
+
+        // Fix Browser Audio & Multi-Language Track Switching
+        function enableBrowserAudioFix(trackIndex = 0) {
+            const video = document.getElementById("player");
+            const currentTime = Math.floor(video.currentTime || 0);
+            const isPaused = video.paused;
+            const remuxURL = `/stream-remux/{{.MessageID}}?hash={{.Hash}}&audio=${trackIndex}&start=${currentTime}`;
+
+            video.src = remuxURL;
+            video.load();
+            if (!isPaused) {
+                video.play().catch(() => {});
+            }
+        }
+
+        // Fetch Audio Tracks dynamically
+        function loadAudioTracks() {
+            fetch(`/audio-list/{{.MessageID}}?hash={{.Hash}}`)
+                .then(res => res.json())
+                .then(tracks => {
+                    if (tracks && tracks.length > 0) {
+                        const selector = document.getElementById("audio-track-selector");
+                        selector.innerHTML = "";
+                        tracks.forEach((track, i) => {
+                            const opt = document.createElement("option");
+                            opt.value = i;
+                            const label = track.title || track.language || `Track ${i + 1}`;
+                            opt.textContent = `Audio ${i + 1}: ${label}`;
+                            selector.appendChild(opt);
+                        });
+                        selector.style.display = "inline-block";
+                    }
+                }).catch(() => {});
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            loadAudioTracks();
+        });
 
         // Prevent Right Click / Context Menu
         document.addEventListener('contextmenu', (e) => {

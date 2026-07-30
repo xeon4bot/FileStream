@@ -210,6 +210,8 @@ type WatchPageData struct {
 	Status        string
 	StreamURL     string
 	DownloadURL   string
+	MessageID     int
+	Hash          string
 }
 
 func probeFile(ctx context.Context, streamURL string) (*FFprobeResult, error) {
@@ -284,6 +286,8 @@ func getWatchRoute(ctx *gin.Context) {
 		Status:        "Ready",
 		StreamURL:     streamURL,
 		DownloadURL:   downloadURL,
+		MessageID:     messageID,
+		Hash:          authHash,
 	}
 
 	tmpl, err := template.New("watch").Parse(watchHTML)
@@ -569,7 +573,9 @@ func getStreamRemuxRoute(ctx *gin.Context) {
 		"-map", "0:v:0",
 		"-map", "0:a:"+audioIndex,
 		"-c:v", "copy",
-		"-c:a", "copy",
+		"-c:a", "aac",
+		"-b:a", "192k",
+		"-ac", "2",
 		"-avoid_negative_ts", "make_zero",
 		"-max_interleave_delta", "0",
 		"-f", "mp4",
