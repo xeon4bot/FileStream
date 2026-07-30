@@ -99,7 +99,28 @@ func sendLink(ctx *ext.Context, u *ext.Update) error {
 	hash := utils.GetShortHash(fullHash)
 	link := fmt.Sprintf("%s/stream/%d?hash=%s", config.ValueOf.Host, messageID, hash)
 	watchLink := fmt.Sprintf("%s/watch/%d?hash=%s", config.ValueOf.Host, messageID, hash)
-	text := styling.Code(link)
+	user := u.EffectiveUser()
+	senderName := "Unknown User"
+	if user != nil {
+		name := strings.TrimSpace(user.FirstName + " " + user.LastName)
+		if user.Username != "" {
+			senderName = fmt.Sprintf("%s (@%s)", name, user.Username)
+		} else {
+			senderName = name
+		}
+	}
+	forwardedFrom, _ := utils.ExtractForwardInfo(ctx, ctx.Raw, u.EffectiveMessage.Message)
+
+	text := styling.Plain(
+		fmt.Sprintf("📁 File Name: %s\n⚡ File Size: %s\n👤 Forwarded By: %s\n📢 Forwarded From: %s\n\n🔗 Stream Link:\n%s",
+			file.FileName,
+			utils.FormatBytes(file.FileSize),
+			senderName,
+			forwardedFrom,
+			link,
+		),
+	)
+
 	row := tg.KeyboardButtonRow{
 		Buttons: []tg.KeyboardButtonClass{
 			&tg.KeyboardButtonURL{
@@ -129,13 +150,13 @@ func sendLink(ctx *ext.Context, u *ext.Update) error {
 	}
 	if strings.Contains(link, "http://localhost") {
 		_, err = ctx.Reply(u, ext.ReplyTextStyledText(text), &ext.ReplyOpts{
-			NoWebpage:        false,
+			NoWebpage:        true,
 			ReplyToMessageId: u.EffectiveMessage.ID,
 		})
 	} else {
 		_, err = ctx.Reply(u, ext.ReplyTextStyledText(text), &ext.ReplyOpts{
 			Markup:           markup,
-			NoWebpage:        false,
+			NoWebpage:        true,
 			ReplyToMessageId: u.EffectiveMessage.ID,
 		})
 	}

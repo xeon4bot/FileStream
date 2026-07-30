@@ -231,6 +231,8 @@ type WatchPageData struct {
 	MessageID       int
 	Hash            string
 	NeedsAudioRemux bool
+	ForwardedFrom   string
+	ForwardedBy     string
 }
 
 func probeFile(ctx context.Context, streamURL string) (*FFprobeResult, error) {
@@ -366,6 +368,8 @@ func getWatchRoute(ctx *gin.Context) {
 		MessageID:       messageID,
 		Hash:            authHash,
 		NeedsAudioRemux: needsAudioRemux,
+		ForwardedFrom:   file.ForwardedFrom,
+		ForwardedBy:     file.ForwardedBy,
 	}
 
 	tmpl, err := template.New("watch").Parse(watchHTML)
