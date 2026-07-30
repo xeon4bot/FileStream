@@ -6,6 +6,8 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"regexp"
+	"strconv"
 	"sync"
 	"time"
 
@@ -13,6 +15,21 @@ import (
 	"github.com/gotd/td/tg"
 	"go.uber.org/zap"
 )
+
+var floodWaitRegex = regexp.MustCompile(`FLOOD_WAIT\s*(?:\(?|_)(\d+)\)?`)
+
+func parseFloodWait(err error) int {
+	if err == nil {
+		return 0
+	}
+	matches := floodWaitRegex.FindStringSubmatch(err.Error())
+	if len(matches) > 1 {
+		if sec, convErr := strconv.Atoi(matches[1]); convErr == nil && sec > 0 {
+			return sec
+		}
+	}
+	return 0
+}
 
 // calculateBlockSize func determines optimal block size based on the range requested.
 // Smaller ranges use smaller blocks to reduce wasted bandwidth during seeks.
@@ -272,7 +289,18 @@ func (p *StreamPipe) downloadBlockWithRetry(offset int64) ([]byte, error) {
 			return nil, p.ctx.Err()
 		}
 
-		// exponential backoff
+		// Handle Telegram FLOOD_WAIT error explicitly
+		if floodSecs := parseFloodWait(err); floodSecs > 0 {
+			p.log.Sugar().Warnf("FLOOD_WAIT (%d sec) detected on block download, pausing retry...", floodSecs)
+			select {
+			case <-time.After(time.Duration(floodSecs+1) * time.Second):
+			case <-p.ctx.Done():
+				return nil, p.ctx.Err()
+			}
+			continue
+		}
+
+		// exponential backoff for other errors
 		select {
 		case <-time.After(backoff):
 			backoff *= 2
