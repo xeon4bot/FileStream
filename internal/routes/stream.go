@@ -341,10 +341,8 @@ func getWatchRoute(ctx *gin.Context) {
 		resolutionStr = fmt.Sprintf("%dx%d", file.Width, file.Height)
 	}
 
+	// Always default to rawStreamURL for accurate duration, full seekability and HTTP range headers
 	streamURL := rawStreamURL
-	if needsAudioRemux {
-		streamURL = remuxURL
-	}
 
 	data := WatchPageData{
 		FileName:        file.FileName,
