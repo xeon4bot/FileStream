@@ -202,16 +202,19 @@ type FFprobeStream struct {
 }
 
 type WatchPageData struct {
-	FileName      string
-	FileSizeStr   string
-	DurationStr   string
-	ResolutionStr string
-	MimeType      string
-	Status        string
-	StreamURL     string
-	DownloadURL   string
-	MessageID     int
-	Hash          string
+	FileName        string
+	FileSizeStr     string
+	DurationStr     string
+	ResolutionStr   string
+	MimeType        string
+	Status          string
+	StreamURL       string
+	RawStreamURL    string
+	RemuxURL        string
+	DownloadURL     string
+	MessageID       int
+	Hash            string
+	NeedsAudioRemux bool
 }
 
 func probeFile(ctx context.Context, streamURL string) (*FFprobeResult, error) {
@@ -274,20 +277,66 @@ func getWatchRoute(ctx *gin.Context) {
 		resolutionStr = fmt.Sprintf("%dx%d", file.Width, file.Height)
 	}
 
-	streamURL := fmt.Sprintf("/stream/%d?hash=%s", messageID, authHash)
+	rawStreamURL := fmt.Sprintf("/stream/%d?hash=%s", messageID, authHash)
+	remuxURL := fmt.Sprintf("/stream-remux/%d?hash=%s&audio=0", messageID, authHash)
 	downloadURL := fmt.Sprintf("/stream/%d?hash=%s&d=true", messageID, authHash)
 
+	// Determine if stream needs AAC audio remuxing for browser playback compatibility
+	needsAudioRemux := false
+	fileNameLower := strings.ToLower(file.FileName)
+
+	if strings.Contains(fileNameLower, "dd5_1") ||
+		strings.Contains(fileNameLower, "dd5.1") ||
+		strings.Contains(fileNameLower, "ac3") ||
+		strings.Contains(fileNameLower, "eac3") ||
+		strings.Contains(fileNameLower, "dts") ||
+		strings.Contains(fileNameLower, "truehd") ||
+		strings.Contains(fileNameLower, "multi") ||
+		strings.Contains(fileNameLower, "dual") ||
+		strings.HasSuffix(fileNameLower, ".mkv") {
+		needsAudioRemux = true
+	}
+
+	// Probe video streams via FFprobe to verify audio tracks & codecs
+	localStreamURL := fmt.Sprintf("http://127.0.0.1:%d/stream/%d?hash=%s", config.ValueOf.Port, messageID, authHash)
+	probeCtx, cancel := context.WithTimeout(ctx.Request.Context(), 3*time.Second)
+	defer cancel()
+
+	if probeRes, err := probeFile(probeCtx, localStreamURL); err == nil {
+		audioCount := 0
+		for _, s := range probeRes.Streams {
+			if s.CodecType == "audio" {
+				audioCount++
+				codec := strings.ToLower(s.CodecName)
+				if codec == "ac3" || codec == "eac3" || codec == "dts" || codec == "truehd" || codec == "dca" || codec == "mlp" || codec == "flac" {
+					needsAudioRemux = true
+				}
+			}
+		}
+		if audioCount > 1 {
+			needsAudioRemux = true
+		}
+	}
+
+	streamURL := rawStreamURL
+	if needsAudioRemux {
+		streamURL = remuxURL
+	}
+
 	data := WatchPageData{
-		FileName:      file.FileName,
-		FileSizeStr:   utils.FormatBytes(file.FileSize),
-		DurationStr:   utils.FormatDuration(file.Duration),
-		ResolutionStr: resolutionStr,
-		MimeType:      file.MimeType,
-		Status:        "Ready",
-		StreamURL:     streamURL,
-		DownloadURL:   downloadURL,
-		MessageID:     messageID,
-		Hash:          authHash,
+		FileName:        file.FileName,
+		FileSizeStr:     utils.FormatBytes(file.FileSize),
+		DurationStr:     utils.FormatDuration(file.Duration),
+		ResolutionStr:   resolutionStr,
+		MimeType:        file.MimeType,
+		Status:          "Ready",
+		StreamURL:       streamURL,
+		RawStreamURL:    rawStreamURL,
+		RemuxURL:        remuxURL,
+		DownloadURL:     downloadURL,
+		MessageID:       messageID,
+		Hash:            authHash,
+		NeedsAudioRemux: needsAudioRemux,
 	}
 
 	tmpl, err := template.New("watch").Parse(watchHTML)
