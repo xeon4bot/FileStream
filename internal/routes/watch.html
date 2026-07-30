@@ -1279,8 +1279,7 @@
             <div class="video-container">
                 <div class="ripple-overlay left" id="ripple-left">-10</div>
                 <div class="ripple-overlay right" id="ripple-right">+10</div>
-                <video id="player" controls playsinline preload="auto">
-                    <source src="{{.StreamURL}}" type="{{.MimeType}}">
+                <video id="player" src="{{.StreamURL}}" controls playsinline preload="auto">
                     Your browser does not support the video tag or format.
                 </video>
             </div>
@@ -1343,45 +1342,14 @@
                 </svg>
                 Download High-Speed
             </a>
-            
-            <!-- Audio Issues Collapsible Notice Card -->
-            <div class="audio-notice-card" id="audio-notice-card">
-                <button type="button" class="audio-notice-header" onclick="toggleAudioNotice()">
-                    <div class="audio-notice-left">
-                        <div class="audio-notice-icon">
-                            <svg viewBox="0 0 24 24">
-                                <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6zM3.41 1.86L2 3.27l4.99 4.99L2 13v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.98 3.68-1.92l2.31 2.31 1.41-1.41L3.41 1.86z"/>
-                            </svg>
-                        </div>
-                        <div class="audio-notice-title-wrap">
-                            <span class="audio-notice-title">No Sound / Multi-Language Audio Issues?</span>
-                            <span class="audio-notice-badge">Help & Fix</span>
-                        </div>
-                    </div>
-                    <div class="audio-notice-toggle-btn">
-                        <span id="audio-toggle-text">Show Fix</span>
-                        <svg class="chevron-icon" viewBox="0 0 24 24" id="audio-chevron">
-                            <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
-                        </svg>
-                    </div>
-                </button>
-                <div class="audio-notice-collapse" id="audio-notice-body">
-                    <div class="audio-notice-inner">
-                        <div>
-                            Web browsers (Chrome, Safari, Firefox) cannot decode surround sound codecs like <strong>Dolby Digital AC3 5.1 / EAC3 / DTS</strong> or switch <strong>Multi-Language / Dual Audio</strong> tracks inside MKV files. Click the button below to fix browser sound or stream in <strong>VLC / MX Player</strong> for full audio controls!
-                        </div>
-                        <div style="margin-top: 12px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                            <button type="button" onclick="enableBrowserAudioFix(0)" class="fix-audio-btn">
-                                <svg viewBox="0 0 24 24" style="width: 18px; height: 18px; fill: currentColor;"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
-                                <span>Fix Audio Sound in Browser (Transcode to AAC)</span>
-                            </button>
-                            <select id="audio-track-selector" class="audio-track-select" style="display: none;" onchange="enableBrowserAudioFix(this.value)">
-                                <option value="0">Default Audio Track</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
+            {{if .NeedsAudioRemux}}
+            <div style="margin-top: 14px; padding: 12px 16px; background: rgba(255, 171, 0, 0.1); border: 1px solid rgba(255, 171, 0, 0.3); border-radius: 10px; color: #ffca28; font-size: 13px; display: flex; align-items: center; gap: 10px;">
+                <svg viewBox="0 0 24 24" style="width: 20px; height: 20px; fill: currentColor; flex-shrink: 0;">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                </svg>
+                <span><strong>Audio Note:</strong> This file contains AC3/DTS/Multi-Audio tracks. If you experience no sound in your browser, please stream using <strong>VLC / MX Player</strong> below.</span>
             </div>
+            {{end}}
 
             <div class="actions-divider">
                 <span>OR PLAY IN EXTERNAL APP</span>
@@ -1898,11 +1866,23 @@
         // Fix Browser Audio & Multi-Language Track Switching
         function enableBrowserAudioFix(trackIndex = 0) {
             const video = document.getElementById("player");
-            const currentTime = Math.floor(video.currentTime || 0);
+            let currentTime = Math.floor(video.currentTime || 0);
+            if (currentTime < 5) currentTime = 0;
             const isPaused = video.paused;
             const remuxURL = `/stream-remux/{{.MessageID}}?hash={{.Hash}}&audio=${trackIndex}&start=${currentTime}`;
 
             video.src = remuxURL;
+            video.load();
+            if (!isPaused) {
+                video.play().catch(() => {});
+            }
+        }
+
+        // Reset to Native Direct Stream without Transcoding
+        function resetToNativeStream() {
+            const video = document.getElementById("player");
+            const isPaused = video.paused;
+            video.src = relativeStreamURL;
             video.load();
             if (!isPaused) {
                 video.play().catch(() => {});

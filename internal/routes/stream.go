@@ -154,8 +154,17 @@ func getStreamRoute(ctx *gin.Context) {
 	contentLength := end - start + 1
 	mimeType := file.MimeType
 
-	if mimeType == "" {
-		mimeType = "application/octet-stream"
+	if mimeType == "" || mimeType == "application/octet-stream" {
+		fileNameLower := strings.ToLower(file.FileName)
+		if strings.HasSuffix(fileNameLower, ".mp4") {
+			mimeType = "video/mp4"
+		} else if strings.HasSuffix(fileNameLower, ".mkv") {
+			mimeType = "video/x-matroska"
+		} else if strings.HasSuffix(fileNameLower, ".webm") {
+			mimeType = "video/webm"
+		} else {
+			mimeType = "video/mp4"
+		}
 	}
 
 	ctx.Header("Content-Type", mimeType)
@@ -299,8 +308,7 @@ func getWatchRoute(ctx *gin.Context) {
 		strings.Contains(fileNameLower, "dts") ||
 		strings.Contains(fileNameLower, "truehd") ||
 		strings.Contains(fileNameLower, "multi") ||
-		strings.Contains(fileNameLower, "dual") ||
-		strings.HasSuffix(fileNameLower, ".mkv") {
+		strings.Contains(fileNameLower, "dual") {
 		needsAudioRemux = true
 	}
 
@@ -636,7 +644,7 @@ func getStreamRemuxRoute(ctx *gin.Context) {
 		"-analyzeduration", "500000",
 	}
 	if startSec != "0" && startSec != "" {
-		args = append(args, "-ss", startSec)
+		args = append(args, "-ss", startSec, "-output_ts_offset", startSec)
 	}
 	args = append(args,
 		"-i", localStreamURL,
@@ -646,7 +654,7 @@ func getStreamRemuxRoute(ctx *gin.Context) {
 		"-c:a", "aac",
 		"-b:a", "192k",
 		"-ac", "2",
-		"-avoid_negative_ts", "make_zero",
+		"-avoid_negative_ts", "disabled",
 		"-max_interleave_delta", "0",
 		"-f", "mp4",
 		"-movflags", "frag_keyframe+empty_moov+default_base_moof",
