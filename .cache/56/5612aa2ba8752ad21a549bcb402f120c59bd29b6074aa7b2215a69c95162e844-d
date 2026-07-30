@@ -1,9 +1,0 @@
-./codec.go
-./connection.go
-./detect_codec.go
-./doc.go
-./listener.go
-./obfuscated.go
-./once_close.go
-./protocol.go
-./websocket.go

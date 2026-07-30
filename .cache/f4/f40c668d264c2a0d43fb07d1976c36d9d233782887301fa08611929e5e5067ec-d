@@ -1,7 +1,0 @@
-./container.go
-./doc.go
-./gzip.go
-./message_id.go
-./registry.go
-./rpc_result.go
-./unencrypted_message.go

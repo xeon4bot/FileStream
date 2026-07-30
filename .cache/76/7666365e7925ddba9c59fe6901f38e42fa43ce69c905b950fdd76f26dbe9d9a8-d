@@ -1,6 +1,0 @@
-./client_hello.go
-./doc.go
-./faketls.go
-./record.go
-./server_hello.go
-./tls.go

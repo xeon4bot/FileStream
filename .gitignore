@@ -33,3 +33,7 @@ dist/
 # logs folder
 logs/
 *.log
+
+# Cache folder
+.cache/
+.cache

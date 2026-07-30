@@ -1,5 +1,0 @@
-./decoder.go
-./encoder.go
-./errors.go
-./obj.go
-./tdjson.go

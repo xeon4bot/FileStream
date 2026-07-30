@@ -1,8 +1,0 @@
-./abridged.go
-./codec.go
-./doc.go
-./errors.go
-./full.go
-./intermediate.go
-./no_header.go
-./padded_intermediate.go
