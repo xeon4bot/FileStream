@@ -190,7 +190,12 @@ type EmbeddedSubTrack struct {
 	Title    string `json:"title"`
 }
 
+type FFprobeFormat struct {
+	Duration string `json:"duration"`
+}
+
 type FFprobeResult struct {
+	Format  FFprobeFormat   `json:"format"`
 	Streams []FFprobeStream `json:"streams"`
 }
 
@@ -198,6 +203,8 @@ type FFprobeStream struct {
 	Index     int               `json:"index"`
 	CodecName string            `json:"codec_name"`
 	CodecType string            `json:"codec_type"`
+	Width     int               `json:"width"`
+	Height    int               `json:"height"`
 	Tags      map[string]string `json:"tags"`
 }
 
@@ -220,7 +227,7 @@ type WatchPageData struct {
 func probeFile(ctx context.Context, streamURL string) (*FFprobeResult, error) {
 	cmd := exec.CommandContext(ctx, "ffprobe",
 		"-v", "error",
-		"-show_entries", "stream=index,codec_name,codec_type:stream_tags=language,title",
+		"-show_entries", "format=duration:stream=index,codec_name,codec_type,width,height:stream_tags=language,title",
 		"-of", "json",
 		streamURL,
 	)
@@ -297,14 +304,25 @@ func getWatchRoute(ctx *gin.Context) {
 		needsAudioRemux = true
 	}
 
-	// Probe video streams via FFprobe to verify audio tracks & codecs
+	// Probe video streams via FFprobe to verify exact duration, resolution, audio tracks & codecs
 	localStreamURL := fmt.Sprintf("http://127.0.0.1:%d/stream/%d?hash=%s", config.ValueOf.Port, messageID, authHash)
-	probeCtx, cancel := context.WithTimeout(ctx.Request.Context(), 3*time.Second)
+	probeCtx, cancel := context.WithTimeout(ctx.Request.Context(), 5*time.Second)
 	defer cancel()
 
 	if probeRes, err := probeFile(probeCtx, localStreamURL); err == nil {
+		if file.Duration <= 0 && probeRes.Format.Duration != "" {
+			if durFloat, err := strconv.ParseFloat(probeRes.Format.Duration, 64); err == nil && durFloat > 0 {
+				file.Duration = int(durFloat)
+			}
+		}
 		audioCount := 0
 		for _, s := range probeRes.Streams {
+			if s.CodecType == "video" && (file.Width == 0 || file.Height == 0) {
+				if s.Width > 0 && s.Height > 0 {
+					file.Width = s.Width
+					file.Height = s.Height
+				}
+			}
 			if s.CodecType == "audio" {
 				audioCount++
 				codec := strings.ToLower(s.CodecName)
@@ -318,6 +336,11 @@ func getWatchRoute(ctx *gin.Context) {
 		}
 	}
 
+	durationStr := utils.FormatDuration(file.Duration)
+	if file.Width > 0 && file.Height > 0 {
+		resolutionStr = fmt.Sprintf("%dx%d", file.Width, file.Height)
+	}
+
 	streamURL := rawStreamURL
 	if needsAudioRemux {
 		streamURL = remuxURL
@@ -326,7 +349,7 @@ func getWatchRoute(ctx *gin.Context) {
 	data := WatchPageData{
 		FileName:        file.FileName,
 		FileSizeStr:     utils.FormatBytes(file.FileSize),
-		DurationStr:     utils.FormatDuration(file.Duration),
+		DurationStr:     durationStr,
 		ResolutionStr:   resolutionStr,
 		MimeType:        file.MimeType,
 		Status:          "Ready",
