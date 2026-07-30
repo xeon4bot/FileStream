@@ -1,15 +1,21 @@
 package routes
 
 import (
+	"EverythingSuckz/fsb/config"
 	"EverythingSuckz/fsb/internal/bot"
 	"EverythingSuckz/fsb/internal/stream"
 	"EverythingSuckz/fsb/internal/types"
 	"EverythingSuckz/fsb/internal/utils"
+	"bytes"
+	"context"
 	_ "embed"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"os/exec"
 	"strconv"
+	"time"
 
 	"html/template"
 	"strings"
@@ -33,7 +39,11 @@ func (e *allRoutes) LoadHome(r *Route) {
 	log = e.log.Named("Stream")
 	defer log.Info("Loaded stream route")
 	r.Engine.GET("/stream/:messageID", getStreamRoute)
+	r.Engine.GET("/stream-remux/:messageID", getStreamRemuxRoute)
 	r.Engine.GET("/watch/:messageID", getWatchRoute)
+	r.Engine.GET("/subtitles/:messageID/:trackIndex", getSubtitlesRoute)
+	r.Engine.GET("/subtitles-list/:messageID", getSubtitlesListRoute)
+	r.Engine.GET("/audio-list/:messageID", getAudioListRoute)
 	r.Engine.GET("/favicon.ico", func(ctx *gin.Context) {
 		ctx.Data(http.StatusOK, "image/png", faviconBytes)
 	})
@@ -45,6 +55,15 @@ func (e *allRoutes) LoadHome(r *Route) {
 func getStreamRoute(ctx *gin.Context) {
 	w := ctx.Writer
 	r := ctx.Request
+
+	// Enable CORS for streaming files (specifically needed for WebVTT/SRT subtitles)
+	ctx.Header("Access-Control-Allow-Origin", "*")
+	ctx.Header("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS")
+	ctx.Header("Access-Control-Allow-Headers", "*")
+	if r.Method == "OPTIONS" {
+		ctx.Status(http.StatusOK)
+		return
+	}
 
 	messageIDParm := ctx.Param("messageID")
 	messageID, err := strconv.Atoi(messageIDParm)
@@ -165,6 +184,23 @@ func getStreamRoute(ctx *gin.Context) {
 	}
 }
 
+type EmbeddedSubTrack struct {
+	Index    int    `json:"index"`
+	Language string `json:"language"`
+	Title    string `json:"title"`
+}
+
+type FFprobeResult struct {
+	Streams []FFprobeStream `json:"streams"`
+}
+
+type FFprobeStream struct {
+	Index     int               `json:"index"`
+	CodecName string            `json:"codec_name"`
+	CodecType string            `json:"codec_type"`
+	Tags      map[string]string `json:"tags"`
+}
+
 type WatchPageData struct {
 	FileName      string
 	FileSizeStr   string
@@ -174,6 +210,24 @@ type WatchPageData struct {
 	Status        string
 	StreamURL     string
 	DownloadURL   string
+}
+
+func probeFile(ctx context.Context, streamURL string) (*FFprobeResult, error) {
+	cmd := exec.CommandContext(ctx, "ffprobe",
+		"-v", "error",
+		"-show_entries", "stream=index,codec_name,codec_type:stream_tags=language,title",
+		"-of", "json",
+		streamURL,
+	)
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+	var res FFprobeResult
+	if err := json.Unmarshal(output, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
 }
 
 func getWatchRoute(ctx *gin.Context) {
@@ -240,8 +294,306 @@ func getWatchRoute(ctx *gin.Context) {
 	}
 
 	ctx.Header("Content-Type", "text/html; charset=utf-8")
+	ctx.Header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+	ctx.Header("Pragma", "no-cache")
+	ctx.Header("Expires", "0")
 	w.WriteHeader(http.StatusOK)
 	if err := tmpl.Execute(w, data); err != nil {
 		log.Error("Failed to render watch template", zap.Error(err))
 	}
 }
+
+func getSubtitlesRoute(ctx *gin.Context) {
+	w := ctx.Writer
+	r := ctx.Request
+
+	messageIDParm := ctx.Param("messageID")
+	messageID, err := strconv.Atoi(messageIDParm)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	trackIndexParm := ctx.Param("trackIndex")
+	trackIndex, err := strconv.Atoi(trackIndexParm)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	authHash := ctx.Query("hash")
+	if authHash == "" {
+		http.Error(w, "missing hash param", http.StatusBadRequest)
+		return
+	}
+
+	worker := bot.GetNextWorker()
+	file, err := utils.TimeFuncWithResult(log, "FileFromMessage", func() (*types.File, error) {
+		return utils.FileFromMessage(ctx, worker.Client, messageID)
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	expectedHash := utils.PackFile(
+		file.FileName,
+		file.FileSize,
+		file.MimeType,
+		file.ID,
+	)
+	if !utils.CheckHash(authHash, expectedHash) {
+		http.Error(w, "invalid hash", http.StatusBadRequest)
+		return
+	}
+
+	ctx.Header("Content-Type", "text/vtt; charset=utf-8")
+	ctx.Header("Access-Control-Allow-Origin", "*")
+
+	pipe, err := stream.NewStreamPipe(r.Context(), worker.Client, file.Location, 0, file.FileSize-1, log)
+	if err != nil {
+		log.Error("Failed to create stream pipe for subtitles", zap.Error(err))
+		return
+	}
+	defer pipe.Close()
+
+	var stderr bytes.Buffer
+	cmd := exec.CommandContext(r.Context(), "ffmpeg",
+		"-i", "pipe:0",
+		"-map", fmt.Sprintf("0:%d", trackIndex),
+		"-f", "webvtt",
+		"-",
+	)
+
+	cmd.Stdin = pipe
+	cmd.Stdout = w
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		log.Error("Failed to extract subtitles using ffmpeg pipe", 
+			zap.Error(err),
+			zap.String("stderr", stderr.String()),
+		)
+	}
+}
+
+func getSubtitlesListRoute(ctx *gin.Context) {
+	w := ctx.Writer
+	r := ctx.Request
+
+	messageIDParm := ctx.Param("messageID")
+	messageID, err := strconv.Atoi(messageIDParm)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	authHash := ctx.Query("hash")
+	if authHash == "" {
+		http.Error(w, "missing hash param", http.StatusBadRequest)
+		return
+	}
+
+	worker := bot.GetNextWorker()
+	file, err := utils.TimeFuncWithResult(log, "FileFromMessage", func() (*types.File, error) {
+		return utils.FileFromMessage(ctx, worker.Client, messageID)
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	expectedHash := utils.PackFile(
+		file.FileName,
+		file.FileSize,
+		file.MimeType,
+		file.ID,
+	)
+	if !utils.CheckHash(authHash, expectedHash) {
+		http.Error(w, "invalid hash", http.StatusBadRequest)
+		return
+	}
+
+	localStreamURL := fmt.Sprintf("http://127.0.0.1:%d/stream/%d?hash=%s", config.ValueOf.Port, messageID, authHash)
+	probeCtx, cancel := context.WithTimeout(r.Context(), 45*time.Second)
+	defer cancel()
+
+	var embeddedSubs []EmbeddedSubTrack = []EmbeddedSubTrack{}
+	if probeRes, err := probeFile(probeCtx, localStreamURL); err == nil {
+		for _, stream := range probeRes.Streams {
+			if stream.CodecType == "subtitle" {
+				lang := strings.ToLower(stream.Tags["language"])
+				title := strings.ToLower(stream.Tags["title"])
+				
+				// Keep only English subtitle tracks
+				isEnglish := lang == "eng" || lang == "en" || 
+					strings.Contains(title, "english") || strings.Contains(title, "eng")
+				
+				if isEnglish {
+					embeddedSubs = append(embeddedSubs, EmbeddedSubTrack{
+						Index:    stream.Index,
+						Language: stream.Tags["language"],
+						Title:    stream.Tags["title"],
+					})
+				}
+			}
+		}
+	} else {
+		log.Warn("Failed to probe stream metadata for subtitles", zap.Error(err))
+	}
+
+	ctx.JSON(http.StatusOK, embeddedSubs)
+}
+
+func getAudioListRoute(ctx *gin.Context) {
+	w := ctx.Writer
+	r := ctx.Request
+
+	messageIDParm := ctx.Param("messageID")
+	messageID, err := strconv.Atoi(messageIDParm)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	authHash := ctx.Query("hash")
+	if authHash == "" {
+		http.Error(w, "missing hash param", http.StatusBadRequest)
+		return
+	}
+
+	worker := bot.GetNextWorker()
+	file, err := utils.TimeFuncWithResult(log, "FileFromMessage", func() (*types.File, error) {
+		return utils.FileFromMessage(ctx, worker.Client, messageID)
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	expectedHash := utils.PackFile(
+		file.FileName,
+		file.FileSize,
+		file.MimeType,
+		file.ID,
+	)
+	if !utils.CheckHash(authHash, expectedHash) {
+		http.Error(w, "invalid hash", http.StatusBadRequest)
+		return
+	}
+
+	localStreamURL := fmt.Sprintf("http://127.0.0.1:%d/stream/%d?hash=%s", config.ValueOf.Port, messageID, authHash)
+	probeCtx, cancel := context.WithTimeout(r.Context(), 45*time.Second)
+	defer cancel()
+
+	var embeddedAudios []EmbeddedSubTrack = []EmbeddedSubTrack{}
+	if probeRes, err := probeFile(probeCtx, localStreamURL); err == nil {
+		for _, stream := range probeRes.Streams {
+			if stream.CodecType == "audio" {
+				embeddedAudios = append(embeddedAudios, EmbeddedSubTrack{
+					Index:    stream.Index,
+					Language: stream.Tags["language"],
+					Title:    stream.Tags["title"],
+				})
+			}
+		}
+	} else {
+		log.Warn("Failed to probe stream metadata for audios", zap.Error(err))
+	}
+
+	ctx.JSON(http.StatusOK, embeddedAudios)
+}
+
+// getStreamRemuxRoute remuxes the video stream via FFmpeg selecting a specific audio track.
+// Query params: hash (required), audio (0-based relative audio track index), start (seek seconds).
+func getStreamRemuxRoute(ctx *gin.Context) {
+	w := ctx.Writer
+	r := ctx.Request
+
+	messageIDParm := ctx.Param("messageID")
+	messageID, err := strconv.Atoi(messageIDParm)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	authHash := ctx.Query("hash")
+	if authHash == "" {
+		http.Error(w, "missing hash param", http.StatusBadRequest)
+		return
+	}
+
+	audioIndex := ctx.DefaultQuery("audio", "0")
+	startSec := ctx.DefaultQuery("start", "0")
+
+	worker := bot.GetNextWorker()
+	file, err := utils.TimeFuncWithResult(log, "FileFromMessage", func() (*types.File, error) {
+		return utils.FileFromMessage(ctx, worker.Client, messageID)
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	expectedHash := utils.PackFile(
+		file.FileName,
+		file.FileSize,
+		file.MimeType,
+		file.ID,
+	)
+	if !utils.CheckHash(authHash, expectedHash) {
+		http.Error(w, "invalid hash", http.StatusBadRequest)
+		return
+	}
+
+	localStreamURL := fmt.Sprintf("http://127.0.0.1:%d/stream/%d?hash=%s", config.ValueOf.Port, messageID, authHash)
+
+	// Build FFmpeg args.
+	// Key tuning:
+	//  -probesize 500000     : Probe only 500 KB instead of the default 5 MB so FFmpeg
+	//                          starts producing output in ~1-2 s rather than 20-30 s.
+	//  -analyzeduration 500000 : Analyse at most 0.5 s of stream data before starting output.
+	//  -fflags +nobuffer+genpts: Flush output immediately; regenerate missing/bad PTS from MKV.
+	//  -avoid_negative_ts make_zero : Fix non-monotonic timestamps that can crash the muxer.
+	//  -max_interleave_delta 0      : Write packets immediately without interleave buffering.
+	args := []string{
+		"-hide_banner", "-loglevel", "warning", "-y",
+		"-fflags", "+nobuffer+genpts",
+		"-probesize", "500000",
+		"-analyzeduration", "500000",
+	}
+	if startSec != "0" && startSec != "" {
+		args = append(args, "-ss", startSec)
+	}
+	args = append(args,
+		"-i", localStreamURL,
+		"-map", "0:v:0",
+		"-map", "0:a:"+audioIndex,
+		"-c:v", "copy",
+		"-c:a", "copy",
+		"-avoid_negative_ts", "make_zero",
+		"-max_interleave_delta", "0",
+		"-f", "mp4",
+		"-movflags", "frag_keyframe+empty_moov+default_base_moof",
+		"pipe:1",
+	)
+
+	ctx.Header("Content-Type", "video/mp4")
+	ctx.Header("Cache-Control", "no-cache")
+	ctx.Header("Access-Control-Allow-Origin", "*")
+	w.WriteHeader(http.StatusOK)
+
+	cmd := exec.CommandContext(r.Context(), "ffmpeg", args...)
+	cmd.Stdout = w
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		// Only log if there's actual stderr output.
+		// An empty stderr + non-zero exit usually means the browser closed the
+		// connection and the OS killed FFmpeg (expected, not an error).
+		if stderrStr := stderr.String(); stderrStr != "" {
+			log.Warn("FFmpeg remux error", zap.Error(err), zap.String("stderr", stderrStr))
+		}
+	}
+}
+

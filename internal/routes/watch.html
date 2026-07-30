@@ -183,6 +183,35 @@
             width: 100%;
             aspect-ratio: 16 / 9;
             position: relative;
+            user-select: none;
+            overflow: hidden;
+        }
+
+        .ripple-overlay {
+            position: absolute;
+            top: 50%;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 10;
+            color: #fff;
+            font-size: 22px;
+            font-weight: 700;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+        }
+
+        .ripple-overlay.left {
+            left: 20%;
+            transform: translate(-50%, -50%);
+        }
+
+        .ripple-overlay.right {
+            right: 20%;
+            transform: translate(50%, -50%);
+        }
+
+        .ripple-overlay.active {
+            opacity: 1;
         }
 
         video {
@@ -434,90 +463,293 @@
         .players-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 12px;
+            gap: 14px;
         }
 
         .player-btn {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            padding: 12px 14px;
-            border-radius: 10px;
+            gap: 10px;
+            padding: 13px 16px;
+            border-radius: 14px;
             font-size: 13px;
-            font-weight: 600;
-            text-decoration: none;
+            font-weight: 700;
             cursor: pointer;
-            transition: all 0.2s ease;
-            font-family: inherit;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: 'Outfit', sans-serif;
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.3px;
+            user-select: none;
+            backdrop-filter: blur(6px);
         }
 
+        .player-btn:active {
+            transform: translateY(0) scale(0.97) !important;
+        }
+
+        .btn-icon-badge {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: transform 0.25s ease;
+        }
+
+        .player-btn:hover .btn-icon-badge {
+            transform: scale(1.12) rotate(4deg);
+        }
+
+        .btn-icon-badge svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        /* VLC - Vibrant Orange Gradient */
         .vlc-btn {
-            background: rgba(249, 115, 22, 0.05);
-            border: 1px solid rgba(249, 115, 22, 0.2);
-            color: var(--accent-orange);
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.14) 0%, rgba(234, 88, 12, 0.05) 100%);
+            border: 1px solid rgba(249, 115, 22, 0.35);
+            color: #ff9800;
+        }
+        .vlc-btn .btn-icon-badge {
+            background: rgba(249, 115, 22, 0.2);
+            border: 1px solid rgba(249, 115, 22, 0.3);
         }
         .vlc-btn:hover {
-            background: rgba(249, 115, 22, 0.1);
-            border-color: rgba(249, 115, 22, 0.4);
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.25) 0%, rgba(234, 88, 12, 0.12) 100%);
+            border-color: rgba(249, 115, 22, 0.7);
+            color: #ffa726;
+            box-shadow: 0 8px 24px rgba(249, 115, 22, 0.35);
+            transform: translateY(-3px) scale(1.02);
         }
 
+        /* MX - Emerald Green Gradient */
         .mx-btn {
-            background: rgba(16, 185, 129, 0.05);
-            border: 1px solid rgba(16, 185, 129, 0.2);
-            color: var(--accent-green);
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.14) 0%, rgba(5, 150, 105, 0.05) 100%);
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            color: #34d399;
+        }
+        .mx-btn .btn-icon-badge {
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid rgba(16, 185, 129, 0.3);
         }
         .mx-btn:hover {
-            background: rgba(16, 185, 129, 0.1);
-            border-color: rgba(16, 185, 129, 0.4);
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(5, 150, 105, 0.12) 100%);
+            border-color: rgba(16, 185, 129, 0.7);
+            color: #6ee7b7;
+            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.35);
+            transform: translateY(-3px) scale(1.02);
         }
 
+        /* Playit - Cyber Gold Gradient */
         .playit-btn {
-            background: rgba(250, 204, 21, 0.05);
-            border: 1px solid rgba(250, 204, 21, 0.2);
-            color: var(--accent-gold);
+            background: linear-gradient(135deg, rgba(250, 204, 21, 0.14) 0%, rgba(217, 119, 6, 0.05) 100%);
+            border: 1px solid rgba(250, 204, 21, 0.35);
+            color: #facc15;
+        }
+        .playit-btn .btn-icon-badge {
+            background: rgba(250, 204, 21, 0.2);
+            border: 1px solid rgba(250, 204, 21, 0.3);
         }
         .playit-btn:hover {
-            background: rgba(250, 204, 21, 0.1);
-            border-color: rgba(250, 204, 21, 0.4);
+            background: linear-gradient(135deg, rgba(250, 204, 21, 0.25) 0%, rgba(217, 119, 6, 0.12) 100%);
+            border-color: rgba(250, 204, 21, 0.7);
+            color: #fde047;
+            box-shadow: 0 8px 24px rgba(250, 204, 21, 0.35);
+            transform: translateY(-3px) scale(1.02);
         }
 
+        /* KM - Electric Blue Gradient */
         .km-btn {
-            background: rgba(59, 130, 246, 0.05);
-            border: 1px solid rgba(59, 130, 246, 0.2);
-            color: var(--accent-blue);
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.14) 0%, rgba(37, 99, 235, 0.05) 100%);
+            border: 1px solid rgba(59, 130, 246, 0.35);
+            color: #60a5fa;
+        }
+        .km-btn .btn-icon-badge {
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.3);
         }
         .km-btn:hover {
-            background: rgba(59, 130, 246, 0.1);
-            border-color: rgba(59, 130, 246, 0.4);
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.25) 0%, rgba(37, 99, 235, 0.12) 100%);
+            border-color: rgba(59, 130, 246, 0.7);
+            color: #93c5fd;
+            box-shadow: 0 8px 24px rgba(59, 130, 246, 0.35);
+            transform: translateY(-3px) scale(1.02);
         }
 
+        /* Simple - Royal Purple Gradient */
         .simple-btn {
-            background: rgba(139, 92, 246, 0.05);
-            border: 1px solid rgba(139, 92, 246, 0.2);
-            color: var(--accent-purple);
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.14) 0%, rgba(124, 58, 237, 0.05) 100%);
+            border: 1px solid rgba(168, 85, 247, 0.35);
+            color: #c084fc;
+        }
+        .simple-btn .btn-icon-badge {
+            background: rgba(168, 85, 247, 0.2);
+            border: 1px solid rgba(168, 85, 247, 0.3);
         }
         .simple-btn:hover {
-            background: rgba(139, 92, 246, 0.1);
-            border-color: rgba(139, 92, 246, 0.4);
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.25) 0%, rgba(124, 58, 237, 0.12) 100%);
+            border-color: rgba(168, 85, 247, 0.7);
+            color: #e9d5ff;
+            box-shadow: 0 8px 24px rgba(168, 85, 247, 0.35);
+            transform: translateY(-3px) scale(1.02);
         }
 
-        .player-btn svg {
-            width: 15px;
-            height: 15px;
-            fill: currentColor;
+        /* Audio Notice Collapsible Card */
+        .audio-notice-card {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(217, 119, 6, 0.03) 100%);
+            border: 1px solid rgba(245, 158, 11, 0.28);
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(6px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .audio-notice-header {
+            width: 100%;
+            padding: 12px 16px;
+            background: transparent;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            color: inherit;
+            font-family: inherit;
+            text-align: left;
+            user-select: none;
+            gap: 12px;
+        }
+
+        .audio-notice-header:hover {
+            background: rgba(245, 158, 11, 0.05);
+        }
+
+        .audio-notice-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .audio-notice-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: #fbbf24;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             flex-shrink: 0;
+        }
+
+        .audio-notice-icon svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+
+        .audio-notice-title-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .audio-notice-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #fbbf24;
+        }
+
+        .audio-notice-badge {
+            background: rgba(245, 158, 11, 0.2);
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            color: #fef08a;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 999px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .audio-notice-toggle-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #fbbf24;
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            padding: 5px 12px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .audio-notice-header:hover .audio-notice-toggle-btn {
+            background: rgba(245, 158, 11, 0.22);
+            border-color: rgba(245, 158, 11, 0.45);
+        }
+
+        .chevron-icon {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+            transition: transform 0.3s ease;
+        }
+
+        .audio-notice-card.expanded .chevron-icon {
+            transform: rotate(180deg);
+        }
+
+        /* Collapsible body */
+        .audio-notice-collapse {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .audio-notice-card.expanded .audio-notice-collapse {
+            max-height: 200px;
+        }
+
+        .audio-notice-inner {
+            padding: 0 16px 14px 60px;
+            font-size: 12px;
+            color: rgba(244, 244, 245, 0.85);
+            line-height: 1.5;
+            border-top: 1px solid rgba(245, 158, 11, 0.12);
+            margin-top: 4px;
+            padding-top: 10px;
+        }
+
+        .audio-notice-inner strong {
+            color: #fbbf24;
         }
 
         @media (max-width: 768px) {
             .players-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
-            .players-grid a:last-child {
+            .players-grid button:last-child {
                 grid-column: span 2;
             }
             .actions-card {
                 padding: 16px;
+            }
+            .audio-notice-inner {
+                padding-left: 16px;
             }
         }
 
@@ -569,6 +801,79 @@
             color: var(--text-secondary);
         }
 
+        /* Our Bots Card */
+        .bots-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 18px 20px;
+        }
+
+        .bots-title {
+            font-size: 10px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            font-weight: 700;
+            margin-bottom: 14px;
+            text-align: center;
+        }
+
+        .bots-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .bot-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 14px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .bot-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+            flex-shrink: 0;
+        }
+
+        .bot-btn-movie {
+            background: rgba(59, 130, 246, 0.07);
+            border: 1px solid rgba(59, 130, 246, 0.25);
+            color: #60a5fa;
+        }
+        .bot-btn-movie:hover {
+            background: rgba(59, 130, 246, 0.14);
+            border-color: rgba(59, 130, 246, 0.45);
+            transform: translateY(-1px);
+        }
+
+        .bot-btn-stream {
+            background: rgba(250, 204, 21, 0.07);
+            border: 1px solid rgba(250, 204, 21, 0.25);
+            color: var(--accent-gold);
+        }
+        .bot-btn-stream:hover {
+            background: rgba(250, 204, 21, 0.14);
+            border-color: rgba(250, 204, 21, 0.45);
+            transform: translateY(-1px);
+        }
+
+        @media (max-width: 480px) {
+            .bots-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         /* Footer */
         footer {
             margin-top: 30px;
@@ -588,25 +893,7 @@
 
         /* Toast Alert styling */
         .toast {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background: #111026;
-            border: 1px solid rgba(250, 204, 21, 0.4);
-            color: var(--text-primary);
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 500;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            z-index: 1000;
-            pointer-events: none;
-        }
-
-        .toast.show {
-            transform: translateX(-50%) translateY(0);
+            display: none !important;
         }
 
         /* Responsive spacing */
@@ -634,6 +921,283 @@
                 width: 100%;
                 justify-content: center;
             }
+        }
+        /* Player Instruction Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(4, 3, 10, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.25s ease, visibility 0.25s ease;
+            padding: 16px;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-card {
+            background: #0e0d1a;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 520px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(250, 204, 21, 0.08);
+            overflow: hidden;
+            transform: scale(0.92) translateY(10px);
+            transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-overlay.active .modal-card {
+            transform: scale(1) translateY(0);
+        }
+
+        .modal-header {
+            padding: 18px 22px;
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-title-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .modal-player-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(250, 204, 21, 0.1);
+            border: 1px solid rgba(250, 204, 21, 0.25);
+            color: var(--accent-gold);
+            flex-shrink: 0;
+        }
+
+        .modal-player-icon svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        .modal-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .modal-subtitle {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 1px;
+        }
+
+        .modal-close-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-secondary);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            line-height: 1;
+            transition: all 0.2s ease;
+        }
+
+        .modal-close-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: var(--text-primary);
+        }
+
+        /* Tabs */
+        .modal-tabs {
+            display: flex;
+            background: rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid var(--card-border);
+            padding: 4px 16px;
+            gap: 8px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px 14px;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: var(--text-secondary);
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .tab-btn.active {
+            color: var(--accent-gold);
+            border-bottom-color: var(--accent-gold);
+            background: rgba(250, 204, 21, 0.04);
+            border-radius: 6px 6px 0 0;
+        }
+
+        .tab-btn svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        /* Modal Body / Steps */
+        .modal-body {
+            padding: 20px 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            max-height: 55vh;
+            overflow-y: auto;
+        }
+
+        .steps-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .step-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 12px 14px;
+        }
+
+        .step-num {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(250, 204, 21, 0.15);
+            border: 1px solid rgba(250, 204, 21, 0.3);
+            color: var(--accent-gold);
+            font-weight: 700;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .step-text {
+            font-size: 13px;
+            line-height: 1.5;
+            color: var(--text-primary);
+        }
+
+        .step-text strong {
+            color: var(--accent-gold);
+        }
+
+        .step-code {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-family: monospace;
+            font-size: 11px;
+            color: #60a5fa;
+        }
+
+        .modal-footer {
+            padding: 16px 22px;
+            background: rgba(0, 0, 0, 0.3);
+            border-top: 1px solid var(--card-border);
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-modal-copy {
+            flex: 1;
+            min-width: 140px;
+            background: linear-gradient(135deg, #facc15 0%, #eab308 100%);
+            border: none;
+            color: #000;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .btn-modal-copy:hover {
+            box-shadow: 0 4px 15px rgba(250, 204, 21, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-modal-copy svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        .btn-modal-direct {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: var(--text-primary);
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .btn-modal-direct:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.25);
         }
     </style>
 </head>
@@ -678,13 +1242,15 @@
         <!-- Video Player Card -->
         <div class="player-card">
             <div class="video-container">
+                <div class="ripple-overlay left" id="ripple-left">-10</div>
+                <div class="ripple-overlay right" id="ripple-right">+10</div>
                 <video id="player" controls playsinline preload="auto">
                     <source src="{{.StreamURL}}" type="{{.MimeType}}">
                     Your browser does not support the video tag or format.
                 </video>
             </div>
             
-            <!-- Custom Playback Speeds and PiP -->
+            <!-- Custom Playback Speeds & PiP -->
             <div class="control-bar">
                 <div class="speed-control">
                     <span class="speed-label">Speed</span>
@@ -694,12 +1260,14 @@
                     <button class="speed-btn" onclick="setSpeed(1.5)">1.5x</button>
                     <button class="speed-btn" onclick="setSpeed(2)">2x</button>
                 </div>
-                <button class="pip-btn" onclick="togglePiP()">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M19 11h-8v6h8v-6zm4 8V4.98C23 3.88 22.1 3 21 3H3c-1.1 0-2 .88-2 1.98V19c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2zm-2 .02H3V4.97h18v14.05z"/>
-                    </svg>
-                    PiP
-                </button>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <button class="pip-btn" onclick="togglePiP()" title="Picture-in-Picture">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M19 11h-8v6h8v-6zm4 8V4.98C23 3.88 22.1 3 21 3H3c-1.1 0-2 .88-2 1.98V19c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2zm-2 .02H3V4.97h18v14.05z"/>
+                        </svg>
+                        PiP
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -741,46 +1309,84 @@
                 Download High-Speed
             </a>
             
+            <!-- Audio Issues Collapsible Notice Card -->
+            <div class="audio-notice-card" id="audio-notice-card">
+                <button type="button" class="audio-notice-header" onclick="toggleAudioNotice()">
+                    <div class="audio-notice-left">
+                        <div class="audio-notice-icon">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6zM3.41 1.86L2 3.27l4.99 4.99L2 13v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.98 3.68-1.92l2.31 2.31 1.41-1.41L3.41 1.86z"/>
+                            </svg>
+                        </div>
+                        <div class="audio-notice-title-wrap">
+                            <span class="audio-notice-title">Audio / Sound Not Working?</span>
+                            <span class="audio-notice-badge">Help & Fix</span>
+                        </div>
+                    </div>
+                    <div class="audio-notice-toggle-btn">
+                        <span id="audio-toggle-text">Show Fix</span>
+                        <svg class="chevron-icon" viewBox="0 0 24 24" id="audio-chevron">
+                            <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+                        </svg>
+                    </div>
+                </button>
+                <div class="audio-notice-collapse" id="audio-notice-body">
+                    <div class="audio-notice-inner">
+                        Some web browsers (like Chrome, Firefox, or Safari) do not support multi-channel audio codecs (such as <strong>EAC3 / AC3 / DTS</strong>). If you hear no sound in the browser player, please stream using an external player app (<strong>VLC</strong>, <strong>MX Player</strong>, <strong>PLAYit</strong>, <strong>KM Player</strong>, etc.) for full audio decoding. Click any player button below for step-by-step connection guides!
+                    </div>
+                </div>
+            </div>
+
             <div class="actions-divider">
                 <span>OR PLAY IN EXTERNAL APP</span>
             </div>
             
             <div class="players-grid">
                 <!-- VLC -->
-                <a href="" id="vlc-link" class="player-btn vlc-btn">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M12 2L2 22h20L12 2zm0 3.99L18.01 18H5.99L12 5.99zM8.5 16h7l-3.5-5.5-3.5 5.5z"/>
-                    </svg>
-                    VLC Player
-                </a>
+                <button type="button" onclick="openPlayerModal('vlc', event)" class="player-btn vlc-btn">
+                    <span class="btn-icon-badge">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 2L2 22h20L12 2zm0 3.99L18.01 18H5.99L12 5.99zM8.5 16h7l-3.5-5.5-3.5 5.5z"/>
+                        </svg>
+                    </span>
+                    <span>VLC Player</span>
+                </button>
                 <!-- MX -->
-                <a href="" id="mx-link" class="player-btn mx-btn">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>
-                    </svg>
-                    MX Player
-                </a>
+                <button type="button" onclick="openPlayerModal('mx', event)" class="player-btn mx-btn">
+                    <span class="btn-icon-badge">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>
+                        </svg>
+                    </span>
+                    <span>MX Player</span>
+                </button>
                 <!-- Playit -->
-                <a href="" id="playit-link" class="player-btn playit-btn">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
-                    </svg>
-                    Playit
-                </a>
+                <button type="button" onclick="openPlayerModal('playit', event)" class="player-btn playit-btn">
+                    <span class="btn-icon-badge">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                        </svg>
+                    </span>
+                    <span>Playit</span>
+                </button>
                 <!-- KM -->
-                <a href="" id="km-link" class="player-btn km-btn">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
-                    </svg>
-                    KM Player
-                </a>
+                <button type="button" onclick="openPlayerModal('km', event)" class="player-btn km-btn">
+                    <span class="btn-icon-badge">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                        </svg>
+                    </span>
+                    <span>KM Player</span>
+                </button>
                 <!-- Simple -->
-                <a href="" id="simple-link" class="player-btn simple-btn">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z"/>
-                    </svg>
-                    Simple Player
-                </a>
+                <button type="button" onclick="openPlayerModal('simple', event)" class="player-btn simple-btn">
+                    <span class="btn-icon-badge">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z"/>
+                        </svg>
+                    </span>
+                    <span>Simple Player</span>
+                </button>
             </div>
         </div>
 
@@ -797,6 +1403,25 @@
             </div>
         </div>
 
+        <!-- Our Bots Card -->
+        <div class="bots-card">
+            <div class="bots-title">Our Telegram Bots</div>
+            <div class="bots-grid">
+                <a href="https://t.me/xeonmovie_bot" target="_blank" class="bot-btn bot-btn-movie">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/>
+                    </svg>
+                    Movie Bot
+                </a>
+                <a href="https://t.me/XeonStream_bot" target="_blank" class="bot-btn bot-btn-stream">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M21 3L3 10.53v.98l6.84 2.65L12.48 21h.98L21 3z"/>
+                    </svg>
+                    Stream Bot
+                </a>
+            </div>
+        </div>
+
         <!-- Footer Info -->
         <footer>
             <div>Powered by <a href="/">File2Link</a> • Files hosted on Telegram by XeonModz</div>
@@ -807,44 +1432,227 @@
     <!-- Notification Toast -->
     <div id="toast" class="toast">Copied!</div>
 
+    <!-- External Player Guide Modal -->
+    <div id="player-modal" class="modal-overlay" onclick="handleModalBackdropClick(event)">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <div class="modal-player-icon" id="modal-player-icon">
+                        <svg viewBox="0 0 24 24"><path d="M12 2L2 22h20L12 2z"/></svg>
+                    </div>
+                    <div>
+                        <div class="modal-title" id="modal-player-name">VLC Player</div>
+                        <div class="modal-subtitle">Follow steps to stream in external app</div>
+                    </div>
+                </div>
+                <button class="modal-close-btn" onclick="closePlayerModal()">&times;</button>
+            </div>
+
+            <div class="modal-tabs">
+                <button class="tab-btn active" id="tab-pc" onclick="switchPlayerTab('pc')">
+                    <svg viewBox="0 0 24 24"><path d="M20 18c1.1 0 1.99-.9 1.99-2L22 5c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 5h16v11H4V5z"/></svg>
+                    PC / Laptop
+                </button>
+                <button class="tab-btn" id="tab-mobile" onclick="switchPlayerTab('mobile')">
+                    <svg viewBox="0 0 24 24"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg>
+                    Mobile App
+                </button>
+            </div>
+
+            <div class="modal-body" id="modal-steps-container">
+                <!-- Dynamic steps rendered here -->
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-modal-copy" onclick="copyText('{{.StreamURL}}', 'Stream link copied to clipboard')">
+                    <svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                    Copy Stream Link
+                </button>
+                <button type="button" class="btn-modal-direct" onclick="closePlayerModal()">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const relativeStreamURL = "{{.StreamURL}}";
         const absoluteStreamURL = new URL(relativeStreamURL, window.location.origin).href;
         const fileName = "{{.FileName}}";
-        
+
+        // Toggle Collapsible Audio Notice
+        function toggleAudioNotice() {
+            const card = document.getElementById('audio-notice-card');
+            const text = document.getElementById('audio-toggle-text');
+            card.classList.toggle('expanded');
+            if (card.classList.contains('expanded')) {
+                text.textContent = 'Hide Fix';
+            } else {
+                text.textContent = 'Show Fix';
+            }
+        }
+
         // Extract extension/format
         const ext = fileName.split('.').pop().toUpperCase();
         document.getElementById('file-format-lbl').textContent = ext || "MP4";
 
-        // Setup External Player Links
+        // Device detection
         const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
         const isAndroid = /Android/i.test(navigator.userAgent);
 
-        // VLC setup
-        let vlcURL;
-        if (isAndroid) {
-            vlcURL = 'intent:vlc://' + absoluteStreamURL + '#Intent;package=org.videolan.vlc;end';
-        } else if (isIOS) {
-            vlcURL = 'vlc-x-callback://x-callback-url/stream?url=' + encodeURIComponent(absoluteStreamURL);
-        } else {
-            vlcURL = 'vlc://' + absoluteStreamURL;
-        }
-        document.getElementById('vlc-link').href = vlcURL;
+        // Player Step Instructions Data
+        const playerGuideData = {
+            vlc: {
+                name: "VLC Player",
+                icon: `<svg viewBox="0 0 24 24"><path d="M12 2L2 22h20L12 2zm0 3.99L18.01 18H5.99L12 5.99zM8.5 16h7l-3.5-5.5-3.5 5.5z"/></svg>`,
+                pc: [
+                    "Click <strong>Copy Stream Link</strong> button below.",
+                    "Open <strong>VLC Media Player</strong> on your PC.",
+                    "Press <span class='step-code'>Ctrl + N</span> or go to <strong>Media</strong> &rarr; <strong>Open Network Stream...</strong>",
+                    "Paste the copied stream URL and click <strong>Play</strong>."
+                ],
+                mobile: [
+                    "Click <strong>Copy Stream Link</strong> button below.",
+                    "Open the <strong>VLC app</strong> on your mobile phone.",
+                    "Tap <strong>More</strong> or <strong>Network</strong> tab at the bottom.",
+                    "Tap <strong>New Stream</strong>, paste the link, and tap <strong>Play</strong>."
+                ]
+            },
+            mx: {
+                name: "MX Player",
+                icon: `<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>`,
+                pc: [
+                    "Click <strong>Copy Stream Link</strong> button below.",
+                    "Open your video player or Android emulator on PC.",
+                    "Navigate to <strong>Menu</strong> &rarr; <strong>Network Stream</strong>.",
+                    "Paste the stream URL and press <strong>OK</strong>."
+                ],
+                mobile: [
+                    "Click <strong>Copy Stream Link</strong> button below.",
+                    "Open <strong>MX Player</strong> on your smartphone.",
+                    "Tap the <strong>3 dots menu</strong> (top right) &rarr; <strong>Network stream</strong>.",
+                    "Paste the URL into the input field and tap <strong>OK</strong>."
+                ]
+            },
+            playit: {
+                name: "Playit Player",
+                icon: `<svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>`,
+                pc: [
+                    "Click <strong>Copy Stream Link</strong> button below.",
+                    "Open PLAYit on your PC / web browser.",
+                    "Select <strong>Network Video / Stream</strong>.",
+                    "Paste the stream URL and start playing."
+                ],
+                mobile: [
+                    "Click <strong>Copy Stream Link</strong> button below.",
+                    "Open <strong>PLAYit App</strong> on your smartphone.",
+                    "Tap the <strong>Link / Globe icon</strong> or <strong>Network Stream</strong>.",
+                    "Paste the stream URL and tap <strong>Play</strong>."
+                ]
+            },
+            km: {
+                name: "KM Player",
+                icon: `<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>`,
+                pc: [
+                    "Click <strong>Copy Stream Link</strong> button below.",
+                    "Open <strong>KMPlayer</strong> on your computer.",
+                    "Right click window &rarr; <strong>Open</strong> &rarr; <strong>Open URL...</strong> (or <span class='step-code'>Ctrl + U</span>).",
+                    "Paste the stream URL and click <strong>OK</strong>."
+                ],
+                mobile: [
+                    "Click <strong>Copy Stream Link</strong> button below.",
+                    "Open <strong>KMPlayer App</strong> on your phone.",
+                    "Tap the <strong>Menu / Network</strong> tab.",
+                    "Select <strong>Network Stream</strong>, paste the link and tap <strong>Play</strong>."
+                ]
+            },
+            simple: {
+                name: "Simple Player",
+                icon: `<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`,
+                pc: [
+                    "Click <strong>Copy Stream Link</strong> button below.",
+                    "Open your favorite Simple Media Player.",
+                    "Go to <strong>File</strong> &rarr; <strong>Open Network URL</strong>.",
+                    "Paste the stream link and click <strong>Play</strong>."
+                ],
+                mobile: [
+                    "Click <strong>Copy Stream Link</strong> button below.",
+                    "Open <strong>Simple Player App</strong> on your mobile.",
+                    "Tap <span class='step-code'>+</span> or <strong>Open URL</strong>.",
+                    "Paste the link and press <strong>Play</strong>."
+                ]
+            }
+        };
 
-        if (isIOS) {
-            document.getElementById('mx-link').href = 'mxplayer://' + absoluteStreamURL;
-            document.getElementById('playit-link').href = 'playit://' + absoluteStreamURL;
-            document.getElementById('km-link').href = 'kmplayer://' + absoluteStreamURL;
-            document.getElementById('simple-link').href = absoluteStreamURL;
-        } else {
-            // Android and PC (Matching Goutham Josh's reference links)
-            document.getElementById('mx-link').href = 'intent:' + absoluteStreamURL + '#Intent;package=com.mxtech.videoplayer.ad;end';
-            document.getElementById('playit-link').href = 'intent:' + absoluteStreamURL + '#Intent;package=com.playit.videoplayer;end';
-            document.getElementById('km-link').href = 'intent:' + absoluteStreamURL + '#Intent;package=com.kmplayer;end';
-            document.getElementById('simple-link').href = 'intent:' + absoluteStreamURL + '#Intent;package=com.simplemobiletools.videoplayer;end';
+        let currentActivePlayerKey = 'vlc';
+        let currentActiveTab = 'pc';
+
+        function openPlayerModal(playerKey, e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            currentActivePlayerKey = playerKey;
+            const data = playerGuideData[playerKey] || playerGuideData.vlc;
+
+            document.getElementById('modal-player-name').textContent = data.name;
+            document.getElementById('modal-player-icon').innerHTML = data.icon;
+
+            // Default tab: mobile for phone users, pc for desktop users
+            if (isAndroid || isIOS) {
+                currentActiveTab = 'mobile';
+            } else {
+                currentActiveTab = 'pc';
+            }
+
+            renderModalSteps();
+            document.getElementById('player-modal').classList.add('active');
+            return false;
         }
 
-        // Video Reactive Status & Speed Control
+        function closePlayerModal() {
+            document.getElementById('player-modal').classList.remove('active');
+        }
+
+        function handleModalBackdropClick(e) {
+            if (e.target.id === 'player-modal') {
+                closePlayerModal();
+            }
+        }
+
+        function switchPlayerTab(tab) {
+            currentActiveTab = tab;
+            renderModalSteps();
+        }
+
+        function renderModalSteps() {
+            const data = playerGuideData[currentActivePlayerKey] || playerGuideData.vlc;
+            const tabPcBtn = document.getElementById('tab-pc');
+            const tabMobileBtn = document.getElementById('tab-mobile');
+
+            if (currentActiveTab === 'pc') {
+                tabPcBtn.classList.add('active');
+                tabMobileBtn.classList.remove('active');
+            } else {
+                tabMobileBtn.classList.add('active');
+                tabPcBtn.classList.remove('active');
+            }
+
+            const steps = data[currentActiveTab] || [];
+            const container = document.getElementById('modal-steps-container');
+            container.innerHTML = `
+                <div class="steps-list">
+                    ${steps.map((stepText, idx) => `
+                        <div class="step-item">
+                            <div class="step-num">${idx + 1}</div>
+                            <div class="step-text">${stepText}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // Video element & status
         const video = document.getElementById('player');
         const statusVal = document.getElementById('status-val');
 
@@ -889,7 +1697,7 @@
         video.addEventListener('loadedmetadata', () => {
             const durationVal = document.getElementById('duration-val');
             const resolutionVal = document.getElementById('resolution-val');
-            
+
             if (video.duration && video.duration !== Infinity) {
                 durationVal.textContent = formatSeconds(video.duration);
             }
@@ -912,15 +1720,68 @@
         // Set playback rate speed
         function setSpeed(rate) {
             video.playbackRate = rate;
-            // Update active button state
             const buttons = document.querySelectorAll('.speed-btn');
             buttons.forEach(btn => btn.classList.remove('active'));
-            
-            // Find the button with the matching rate text
             buttons.forEach(btn => {
                 const searchTxt = rate === 1 ? '1x' : rate + 'x';
                 if (btn.textContent === searchTxt) {
                     btn.classList.add('active');
+                }
+            });
+        }
+
+        // Seek +/- 10s with ripple
+        function forward10() {
+            showRippleOverlay('forward');
+            video.currentTime = Math.min(video.currentTime + 10, video.duration || 999999);
+            showToast('Forward +10s');
+        }
+
+        function backward10() {
+            showRippleOverlay('backward');
+            video.currentTime = Math.max(video.currentTime - 10, 0);
+            showToast('Backward -10s');
+        }
+
+        function showRippleOverlay(direction) {
+            const el = document.getElementById(direction === 'forward' ? 'ripple-right' : 'ripple-left');
+            if (!el) return;
+            el.classList.add('active');
+            setTimeout(() => {
+                el.classList.remove('active');
+            }, 500);
+        }
+
+        // Double-tap / dblclick gesture on video container
+        let lastTapTime = 0;
+        const videoContainerEl = document.querySelector('.video-container');
+
+        if (videoContainerEl) {
+            videoContainerEl.addEventListener('touchend', (e) => {
+                const now = Date.now();
+                const tapLength = now - lastTapTime;
+                if (tapLength < 300 && tapLength > 0) {
+                    e.preventDefault();
+                    const rect = videoContainerEl.getBoundingClientRect();
+                    const touch = e.changedTouches[0];
+                    const touchX = touch.clientX - rect.left;
+                    if (touchX > rect.width / 2) {
+                        forward10();
+                    } else {
+                        backward10();
+                    }
+                }
+                lastTapTime = now;
+            });
+
+            videoContainerEl.addEventListener('dblclick', (e) => {
+                e.preventDefault();
+                const rect = videoContainerEl.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                if (clickX > rect.width / 2) {
+                    forward10();
+                } else {
+                    backward10();
                 }
             });
         }
@@ -939,11 +1800,10 @@
         // Copy actions
         function copyText(text, message) {
             const textToCopy = text === relativeStreamURL ? absoluteStreamURL : text;
-            
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(textToCopy).then(() => {
                     showToast(message);
-                }).catch(err => {
+                }).catch(() => {
                     fallbackCopy(textToCopy, message);
                 });
             } else {
@@ -970,12 +1830,8 @@
         }
 
         function showToast(message) {
-            const toast = document.getElementById("toast");
-            toast.textContent = message;
-            toast.classList.add("show");
-            setTimeout(() => {
-                toast.classList.remove("show");
-            }, 2500);
+            // All toast popups turned off as requested
+            return;
         }
 
         function startDownload() {
@@ -988,15 +1844,61 @@
             document.body.removeChild(a);
         }
 
+        // Prevent Right Click / Context Menu
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            showToast("Right-click is disabled");
+            return false;
+        });
+
+        // Prevent Developer Tools & Code Inspection Shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Block F12
+            if (e.key === 'F12' || e.keyCode === 123) {
+                e.preventDefault();
+                e.stopPropagation();
+                showToast("Inspect Element is disabled");
+                return false;
+            }
+
+            // Block Ctrl+Shift+I / Ctrl+Shift+J / Ctrl+Shift+C / Cmd+Option+I / Cmd+Option+J
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) {
+                e.preventDefault();
+                e.stopPropagation();
+                showToast("Inspect Element is disabled");
+                return false;
+            }
+
+            // Block Ctrl+U / Cmd+U (View Source)
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'U' || e.key === 'u')) {
+                e.preventDefault();
+                e.stopPropagation();
+                showToast("View Source is disabled");
+                return false;
+            }
+
+            // Block Ctrl+S / Cmd+S (Save Page)
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'S' || e.key === 's')) {
+                e.preventDefault();
+                e.stopPropagation();
+                showToast("Page saving is disabled");
+                return false;
+            }
+        }, true);
+
         // Keyboard Shortcuts
         document.addEventListener('keydown', (e) => {
-            // Ignore if typing in an input/textarea
+            if (e.key === 'Escape') {
+                closePlayerModal();
+                return;
+            }
+
             if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') {
                 return;
             }
 
             const key = e.key.toLowerCase();
-            
+
             if (key === ' ' || e.code === 'Space') {
                 e.preventDefault();
                 if (video.paused) {
@@ -1007,12 +1909,10 @@
                 }
             } else if (e.key === 'ArrowRight') {
                 e.preventDefault();
-                video.currentTime += 10;
-                showToast("Forward 10s");
+                forward10();
             } else if (e.key === 'ArrowLeft') {
                 e.preventDefault();
-                video.currentTime = Math.max(0, video.currentTime - 10);
-                showToast("Backward 10s");
+                backward10();
             } else if (e.key === 'ArrowUp') {
                 e.preventDefault();
                 video.volume = Math.min(1, video.volume + 0.1);
@@ -1031,7 +1931,6 @@
             } else if (key === 'p') {
                 e.preventDefault();
                 togglePiP();
-                showToast("Picture-in-Picture");
             }
         });
 
