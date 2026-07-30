@@ -1,0 +1,3 @@
+./xor.go
+./xor_amd64.go
+./xor_amd64.s

@@ -1,0 +1,4 @@
+./hash.go
+./new_hash.go
+./pad.go
+./srp.go
