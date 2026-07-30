@@ -319,6 +319,9 @@ func getWatchRoute(ctx *gin.Context) {
 	}
 
 	streamURL := rawStreamURL
+	if needsAudioRemux {
+		streamURL = remuxURL
+	}
 
 	data := WatchPageData{
 		FileName:        file.FileName,
