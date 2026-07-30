@@ -1739,19 +1739,23 @@
             }
         });
 
-        // Preserve exact backend duration from Telegram metadata
-        video.addEventListener('loadedmetadata', () => {
+        // Dynamically extract and display exact duration from video metadata
+        function updateDurationDisplay() {
             const durationVal = document.getElementById('duration-val');
-            const resolutionVal = document.getElementById('resolution-val');
-
-            // Only update duration if durationVal is empty or N/A
-            if ((!durationVal.textContent || durationVal.textContent.trim() === 'N/A' || durationVal.textContent.trim() === '0m 0s') && video.duration && video.duration !== Infinity && video.duration > 10) {
+            if (video.duration && !isNaN(video.duration) && video.duration !== Infinity && video.duration > 0) {
                 durationVal.textContent = formatSeconds(video.duration);
             }
+        }
+
+        video.addEventListener('loadedmetadata', () => {
+            updateDurationDisplay();
+            const resolutionVal = document.getElementById('resolution-val');
             if (video.videoWidth > 0 && video.videoHeight > 0) {
                 resolutionVal.textContent = video.videoWidth + 'x' + video.videoHeight;
             }
         });
+
+        video.addEventListener('durationchange', updateDurationDisplay);
 
         function formatSeconds(seconds) {
             if (isNaN(seconds) || seconds <= 0) return "N/A";
