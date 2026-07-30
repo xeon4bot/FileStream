@@ -12,7 +12,8 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o /app/fsb -ld
 
 FROM alpine:3.21
 RUN apk add --no-cache ca-certificates ffmpeg tzdata
+WORKDIR /app
 COPY --from=builder /app/fsb /app/fsb
 EXPOSE 8080
-ENTRYPOINT ["/app/fsb", "run"]
+CMD ["/app/fsb", "run"]
 
