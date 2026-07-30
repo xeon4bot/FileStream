@@ -1324,18 +1324,7 @@
                     <span class="label">Status</span>
                     <span class="value" id="status-val">Ready</span>
                 </div>
-                {{if .ForwardedFrom}}
-                <div class="meta-item">
-                    <span class="label">Forwarded From</span>
-                    <span class="value">{{.ForwardedFrom}}</span>
-                </div>
-                {{end}}
-                {{if .ForwardedBy}}
-                <div class="meta-item">
-                    <span class="label">Forwarded By</span>
-                    <span class="value">{{.ForwardedBy}}</span>
-                </div>
-                {{end}}
+
             </div>
             <button class="btn-copy-url" onclick="copyText('{{.StreamURL}}', 'Video URL copied to clipboard')">
                 <svg viewBox="0 0 24 24">

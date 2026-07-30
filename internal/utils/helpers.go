@@ -144,7 +144,6 @@ func FileFromMessage(ctx context.Context, client *gotgproto.Client, messageID in
 	if err != nil {
 		return nil, err
 	}
-	file.ForwardedFrom, file.ForwardedBy = ExtractForwardInfo(ctx, client.API(), message)
 	err = cache.GetCache().Set(
 		key,
 		file,
@@ -154,71 +153,6 @@ func FileFromMessage(ctx context.Context, client *gotgproto.Client, messageID in
 		return nil, err
 	}
 	return file, nil
-}
-
-func ExtractForwardInfo(ctx context.Context, api *tg.Client, msg *tg.Message) (forwardedFrom string, forwardedBy string) {
-	forwardedFrom = "Direct Upload"
-	forwardedBy = "Unknown User"
-
-	if msg == nil {
-		return forwardedFrom, forwardedBy
-	}
-
-	// Extract channel/chat forwarded from
-	fwd := msg.FwdFrom
-	if fwd.FromName != "" {
-		forwardedFrom = fwd.FromName
-	} else if fwd.FromID != nil {
-		switch p := fwd.FromID.(type) {
-		case *tg.PeerChannel:
-			inputChannel := &tg.InputChannel{ChannelID: p.ChannelID}
-			channels, err := api.ChannelsGetChannels(ctx, []tg.InputChannelClass{inputChannel})
-			if err == nil && len(channels.GetChats()) > 0 {
-				if ch, ok := channels.GetChats()[0].(*tg.Channel); ok {
-					forwardedFrom = ch.Title
-				} else {
-					forwardedFrom = fmt.Sprintf("Channel #%d", p.ChannelID)
-				}
-			} else {
-				forwardedFrom = fmt.Sprintf("Channel #%d", p.ChannelID)
-			}
-		case *tg.PeerUser:
-			users, err := api.UsersGetUsers(ctx, []tg.InputUserClass{&tg.InputUser{UserID: p.UserID}})
-			if err == nil && len(users) > 0 {
-				if u, ok := users[0].(*tg.User); ok {
-					name := strings.TrimSpace(u.FirstName + " " + u.LastName)
-					if u.Username != "" {
-						forwardedFrom = fmt.Sprintf("%s (@%s)", name, u.Username)
-					} else {
-						forwardedFrom = name
-					}
-				}
-			} else {
-				forwardedFrom = fmt.Sprintf("User #%d", p.UserID)
-			}
-		}
-	} else if fwd.PostAuthor != "" {
-		forwardedFrom = fwd.PostAuthor
-	}
-
-	// Extract user who forwarded/sent message
-	if msg.FromID != nil {
-		if peerUser, ok := msg.FromID.(*tg.PeerUser); ok {
-			users, err := api.UsersGetUsers(ctx, []tg.InputUserClass{&tg.InputUser{UserID: peerUser.UserID}})
-			if err == nil && len(users) > 0 {
-				if u, ok := users[0].(*tg.User); ok {
-					name := strings.TrimSpace(u.FirstName + " " + u.LastName)
-					if u.Username != "" {
-						forwardedBy = fmt.Sprintf("%s (@%s)", name, u.Username)
-					} else {
-						forwardedBy = name
-					}
-				}
-			}
-		}
-	}
-
-	return forwardedFrom, forwardedBy
 }
 
 func GetLogChannelPeer(ctx context.Context, api *tg.Client, peerStorage *storage.PeerStorage) (*tg.InputChannel, error) {
